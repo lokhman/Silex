@@ -8,7 +8,8 @@ standalone.
 Parameters
 ----------
 
-none
+* **validator.validator_service_ids**: An array of service names representing
+  validators.
 
 Services
 --------
@@ -24,10 +25,6 @@ Services
   data class, which takes a ClassMetadata argument. Then you can set
   constraints on this ClassMetadata instance.
 
-* **validator.validator_factory**: Factory for ConstraintValidators. Defaults
-  to a standard ``ConstraintValidatorFactory``. Mostly used internally by the
-  Validator.
-
 Registering
 -----------
 
@@ -37,8 +34,7 @@ Registering
 
 .. note::
 
-    The Symfony Validator Component comes with the "fat" Silex archive but not
-    with the regular one. If you are using Composer, add it as a dependency:
+    Add the Symfony Validator Component as a dependency:
 
     .. code-block:: bash
 

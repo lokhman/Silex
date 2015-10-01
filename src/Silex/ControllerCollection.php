@@ -182,11 +182,9 @@ class ControllerCollection
     /**
      * Persists and freezes staged controllers.
      *
-     * @param string $prefix
-     *
      * @return RouteCollection A RouteCollection instance
      */
-    public function flush($prefix = '')
+    public function flush()
     {
         if (null === $this->routesFactory) {
             $routes = new RouteCollection();
@@ -194,23 +192,32 @@ class ControllerCollection
             $routes = $this->routesFactory;
         }
 
+        return $this->doFlush('', $routes);
+    }
+
+    private function doFlush($prefix, RouteCollection $routes)
+    {
+        if ($prefix !== '') {
+            $prefix = '/'.trim(trim($prefix), '/');
+        }
+
         foreach ($this->controllers as $controller) {
             if ($controller instanceof Controller) {
+                $controller->getRoute()->setPath($prefix.$controller->getRoute()->getPath());
                 if (!$name = $controller->getRouteName()) {
-                    $name = $controller->generateRouteName($prefix);
+                    $name = $base = $controller->generateRouteName('');
+                    $i = 0;
                     while ($routes->get($name)) {
-                        $name .= '_';
+                        $name = $base.'_'.++$i;
                     }
                     $controller->bind($name);
                 }
                 $routes->add($name, $controller->getRoute());
                 $controller->freeze();
             } else {
-                $routes->addCollection($controller->flush($controller->prefix));
+                $controller->doFlush($prefix.$controller->prefix, $routes);
             }
         }
-
-        $routes->addPrefix($prefix);
 
         $this->controllers = array();
 

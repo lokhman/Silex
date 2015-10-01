@@ -15,7 +15,6 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
@@ -24,17 +23,16 @@ use Symfony\Component\HttpKernel\Event\PostResponseEvent;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Routing\RouteCollection;
 use Silex\Api\BootableProviderInterface;
 use Silex\Api\EventListenerProviderInterface;
 use Silex\Api\ControllerProviderInterface;
+use Silex\Provider\ExceptionHandlerServiceProvider;
 use Silex\Provider\RoutingServiceProvider;
-use Silex\Provider\KernelServiceProvider;
+use Silex\Provider\HttpKernelServiceProvider;
 
 /**
  * The Silex framework class.
@@ -62,55 +60,15 @@ class Application extends Container implements HttpKernelInterface, TerminableIn
     {
         parent::__construct();
 
-        $this['routes_factory'] = $this->factory(function () {
-            return new RouteCollection();
-        });
-
-        $this['routes'] = function ($app) {
-            return $app['routes_factory'];
-        };
-
-        $this['controllers'] = function ($app) {
-            return $app['controllers_factory'];
-        };
-
-        $this['controllers_factory'] = $this->factory(function ($app) {
-            return new ControllerCollection($app['route_factory'], $app['routes_factory']);
-        });
-
-        $this['route_class'] = 'Silex\\Route';
-        $this['route_factory'] = $this->factory(function ($app) {
-            return new $app['route_class']();
-        });
-
-        $this['exception_handler'] = function ($app) {
-            return new ExceptionHandler($app['debug']);
-        };
-
-        $this['callback_resolver'] = function ($app) {
-            return new CallbackResolver($app);
-        };
-
-        $this['resolver'] = function ($app) {
-            return new ControllerResolver($app, $app['logger']);
-        };
-
-        $this['kernel'] = function ($app) {
-            return new HttpKernel($app['dispatcher'], $app['resolver'], $app['request_stack']);
-        };
-
-        $this['request_stack'] = function () {
-            return new RequestStack();
-        };
-
         $this['request.http_port'] = 80;
         $this['request.https_port'] = 443;
         $this['debug'] = false;
         $this['charset'] = 'UTF-8';
         $this['logger'] = null;
 
-        $this->register(new KernelServiceProvider());
+        $this->register(new HttpKernelServiceProvider());
         $this->register(new RoutingServiceProvider());
+        $this->register(new ExceptionHandlerServiceProvider());
 
         foreach ($values as $key => $value) {
             $this[$key] = $value;
@@ -399,12 +357,10 @@ class Application extends Container implements HttpKernelInterface, TerminableIn
 
     /**
      * Flushes the controller collection.
-     *
-     * @param string $prefix The route prefix
      */
-    public function flush($prefix = '')
+    public function flush()
     {
-        $this['routes']->addCollection($this['controllers']->flush($prefix));
+        $this['routes']->addCollection($this['controllers']->flush());
     }
 
     /**

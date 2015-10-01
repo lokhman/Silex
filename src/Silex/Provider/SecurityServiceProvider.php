@@ -21,7 +21,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestMatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Security;
-use Symfony\Component\Security\Core\SecurityContext;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Symfony\Component\Security\Core\User\UserChecker;
 use Symfony\Component\Security\Core\User\InMemoryUserProvider;
@@ -336,7 +335,7 @@ class SecurityServiceProvider implements ServiceProviderInterface, EventListener
         };
 
         $app['security.http_utils'] = function ($app) {
-            return new HttpUtils(isset($app['url_generator']) ? $app['url_generator'] : null, $app['request_matcher']);
+            return new HttpUtils($app['url_generator'], $app['request_matcher']);
         };
 
         $app['security.last_error'] = $app->protect(function (Request $request) {
@@ -450,7 +449,7 @@ class SecurityServiceProvider implements ServiceProviderInterface, EventListener
                     $options,
                     $app['logger'],
                     $app['dispatcher'],
-                    isset($options['with_csrf']) && $options['with_csrf'] && isset($app['form.csrf_provider']) ? $app['form.csrf_provider'] : null
+                    isset($options['with_csrf']) && $options['with_csrf'] && isset($app['csrf.token_manager']) ? $app['csrf.token_manager'] : null
                 );
             };
         });
@@ -503,7 +502,7 @@ class SecurityServiceProvider implements ServiceProviderInterface, EventListener
                     $app['security.http_utils'],
                     $app['security.authentication.logout_handler.'.$name],
                     $options,
-                    isset($options['with_csrf']) && $options['with_csrf'] && isset($app['form.csrf_provider']) ? $app['form.csrf_provider'] : null
+                    isset($options['with_csrf']) && $options['with_csrf'] && isset($app['csrf.token_manager']) ? $app['csrf.token_manager'] : null
                 );
 
                 $invalidateSession = isset($options['invalidate_session']) ? $options['invalidate_session'] : true;
@@ -568,10 +567,6 @@ class SecurityServiceProvider implements ServiceProviderInterface, EventListener
             $app['security.validator.user_password_validator'] = function ($app) {
                 return new UserPasswordValidator($app['security.token_storage'], $app['security.encoder_factory']);
             };
-
-            if (!isset($app['validator.validator_service_ids'])) {
-                $app['validator.validator_service_ids'] = array();
-            }
 
             $app['validator.validator_service_ids'] = array_merge($app['validator.validator_service_ids'], array('security.validator.user_password' => 'security.validator.user_password_validator'));
         }

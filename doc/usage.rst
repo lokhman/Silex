@@ -389,9 +389,9 @@ have the value ``index``.
 Named Routes
 ~~~~~~~~~~~~
 
-Some providers (such as ``UrlGeneratorProvider``) can make use of named routes.
-By default Silex will generate an internal route name for you but you can give
-an explicit route name by calling ``bind``::
+Some providers can make use of named routes. By default Silex will generate an
+internal route name for you but you can give an explicit route name by calling
+``bind``::
 
     $app->get('/', function () {
         // ...
@@ -625,7 +625,7 @@ round-trip to the browser (as for a redirect), use an internal sub-request::
 
 .. tip::
 
-    If you are using ``UrlGeneratorProvider``, you can also generate the URI::
+    You can also generate the URI via the built-in URL generator::
 
         $request = Request::create($app['url_generator']->generate('hello'), 'GET');
 
@@ -760,8 +760,11 @@ Cross-Site-Scripting attacks.
 * **Escaping HTML**: PHP provides the ``htmlspecialchars`` function for this.
   Silex provides a shortcut ``escape`` method::
 
-      $app->get('/name', function (Silex\Application $app) {
-          $name = $app['request']->get('name');
+      use Symfony\Component\HttpFoundation\Request;
+
+      $app->get('/name', function (Request $request, Silex\Application $app) {
+          $name = $request->get('name');
+
           return "You provided the name {$app->escape($name)}.";
       });
 
@@ -771,8 +774,11 @@ Cross-Site-Scripting attacks.
 * **Escaping JSON**: If you want to provide data in JSON format you should
   use the Silex ``json`` function::
 
-      $app->get('/name.json', function (Silex\Application $app) {
-          $name = $app['request']->get('name');
+      use Symfony\Component\HttpFoundation\Request;
+
+      $app->get('/name.json', function (Request $request, Silex\Application $app) {
+          $name = $request->get('name');
+
           return $app->json(array('name' => $name));
       });
 
